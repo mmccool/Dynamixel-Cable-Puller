@@ -6,8 +6,7 @@ include <smooth_model.scad>
 //include <smooth_make.scad>
 include <bolt_params.scad>
 use <bolts.scad>
-use <r200.scad>
-include <r200_params.scad>
+use <MCAD/involute_gears.scad>
 
 sm = 10*sm_base;
 
@@ -177,12 +176,77 @@ module plate() {
   }
 }
 
+cable_r = 1.2/2;
+puller_r = 25*cable_r; // needs to be at least 10x cable diameter 
+puller_t = 5;
+puller_sm = 8*sm;
+puller_ox = 0;
+puller_oy = 0.5;
+puller_oz = standoff_h;
+puller_sr = 4/2;
+puller_gr = 35/2;
+puller_goy = puller_oy+puller_t;
+puller_n = 31;
+
+drive_t = 5;
+drive_ox = 0;
+drive_oy = drive_t;
+drive_oz = bracket_o;
+drive_sm = 8*sm;
+drive_r = 20/2;
+drive_n = 15;
+
+pitch = 210;
+
+module puller() {
+  // puller cylinder
+  translate([puller_ox,puller_oy,puller_oz]) 
+    rotate([90,0,0]) 
+       cylinder(r=puller_r,h=puller_t,$fn=puller_sm);
+  // puller drive gear
+  translate([puller_ox,puller_goy,puller_oz]) 
+    rotate([90,0,0]) 
+       // cylinder(r=puller_gr,h=puller_t,$fn=puller_sm);
+      linear_extrude(puller_t) rotate(90) gear(
+        number_of_teeth=puller_n,
+        circular_pitch=pitch,
+        pressure_angle=28,
+        clearance = 0.2,
+        gear_thickness=drive_t,
+        involute_facets=0,
+        bore_diameter=0,
+        flat=true);
+}
+
+module drive() {
+  // drive gear
+  translate([drive_ox,drive_oy,drive_oz]) 
+    rotate([90,0,0]) 
+      // cylinder(r=drive_r,h=drive_t,$fn=drive_sm);
+      linear_extrude(drive_t) rotate(90) gear(
+        number_of_teeth=drive_n,
+        circular_pitch=pitch,
+        pressure_angle=28,
+        clearance = 0.2,
+        gear_thickness=drive_t,
+        involute_facets=0,
+        bore_diameter=0,
+        flat=true);
+}
+
+module parts() {
+  puller();
+  drive();
+}
+
 module assembly() {
-  translate([0,0,servo_l2+bracket_t+4]) rotate([0,90,90]) {
+  translate([0,0,bracket_o]) rotate([0,90,90]) {
     servo();
     end_bracket();
   }
+  parts();
   plate();
 }
 
-assembly();
+parts();
+// assembly();
